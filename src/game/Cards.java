@@ -94,7 +94,11 @@ public class Cards
         		break;
         	case 'a':
         		cardRankName = "ace";
+        		break;
+        	default:
+        		cardRankName = "single digit";
         }
+		
 		return cardRankName;
 	}
 	
@@ -183,6 +187,8 @@ public class Cards
 		return cardScore;
 		
 	}
+	
+	
 	
 	// SET PLAYER WON
 	public Integer setPlayerWon()

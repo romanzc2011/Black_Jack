@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -30,17 +29,17 @@ import javafx.stage.Stage;
 public class Main extends Application 
 {
 	private static ArrayList<Cards> cardPlayerHand;
-	private static ArrayList<Cards> cardDealerHand;
 	private static ArrayList<Cards> cardDealerList;
 	private static GameButton dealButton;
 	private static Cards card;
+	private static Integer cardOne;
+	private static Integer cardTwo;
 	private static ScoreChecker scoreChecker;
 	private static HBox playerHand;
 	private static HBox dealerHand;
 	private static Label playerWinningsLabel;
 	private static Label playerBetLabel;
 	private TextInputDialog prompt;
-	private boolean playAgain = false;
 	private ImageView blankView;
 	private static Cards blankCard;
 	private DeckCards cardDeck;
@@ -87,7 +86,7 @@ public class Main extends Application
 		// ###############################################################################
 		// BUTTONS
 		GameButton quitButton 		= new GameButton("Quit", "20", 50, 100, "quit", cardDeck);
-		dealButton 		= new GameButton("Deal", "20", 50, 100, "deal", cardDeck);
+		dealButton 					= new GameButton("Deal", "20", 50, 100, "deal", cardDeck);
 		GameButton hitButton 		= new GameButton("Hit Me", "20", 50, 100, "hit", cardDeck);
 		GameButton standButton 		= new GameButton("Stand", "20", 50, 100, "hit", cardDeck);
 		GameButton shuffleButton 	= new GameButton("Shuffle", "20", 50, 100, "shuffle", cardDeck);
@@ -116,8 +115,8 @@ public class Main extends Application
 		playerHand 					= new HBox();
 		
 		Label playerHandLabel 		= new Label("Player Hand:");
-		playerBetLabel 			= new Label("Current Bet:");
-		playerWinningsLabel 	= new Label("Total Winnings:");
+		playerBetLabel 				= new Label("Current Bet:");
+		playerWinningsLabel 		= new Label("Total Winnings:");
 		
 		playerWinningsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 		playerHandLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
@@ -125,7 +124,6 @@ public class Main extends Application
 		
 		playerHand.setPadding(new Insets(10,10,10,10));
 		playerHand.setSpacing(20);
-		
 		
 		
 		// ###############################################################################
@@ -192,11 +190,13 @@ public class Main extends Application
 		
 		Scene scene = new Scene(root,1000,1500);
 		
+		
 		// ###############################################################################
 		// ###############################################################################
 		// BUTTON ACTIONS
 		// ###############################################################################
 		// ###############################################################################
+		
 		
 		// SHUFFLE
 		shuffleButton.getButton().setOnAction(new EventHandler<ActionEvent>() 
@@ -205,12 +205,6 @@ public class Main extends Application
 			public void handle(ActionEvent event)
 			{
 				cardDeck.shuffleDeck();
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 			}
 			
 		});
@@ -220,15 +214,126 @@ public class Main extends Application
 		{
 			public void handle(ActionEvent event)
 			{
-				System.out.println("Dealer must stand now");
-				standDealerLastTurn();
+				
+				// method not used here as program was crashing after 2 rounds
+				cardDeck.clearGameCards();
+				cardPlayerHand.clear();
+				cardDealerList.clear();
 				
 				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
+					
+					card = cardDeck.getCards(1).get(0);
+					cardDealerList.add(card);
+				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
+				if (card.getCardValue() != null) 
+				{
+					dealerScore += card.getCardValue();
+				}
+				System.out.println(dealerScore);
+				// Remove cards from deck that are used
+				cardDeck.removeCard(1);
+				
+				// DISPLAY BLANK CARD AT END OF HAND OF DEALER
+				dealerHand.getChildren().remove(blankView);
+				dealerHand.getChildren().add(card.displayCardView());
+				dealerHand.getChildren().add(blankView);
+				
+				// DEALER OVER 21
+				if(dealerScore > 21)
+				{
+					playerWins++;
+					betWinnings += betAmount;
+					updateLabels(playerWins,playerLoses,betWinnings);
+					System.out.println("Player won");
+					
+					if(playAgainPrompt())
+					{
+						try {
+							clearAll();
+						} catch (FileNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				
+				// PLAYER OVER 21
+				if(playerScore > 21)
+				{
+					playerLoses++;
+					betWinnings -= betAmount;
+					updateLabels(playerWins, playerLoses, betWinnings);
+					System.out.println("Player lost");
+					
+					if(playAgainPrompt())
+					{
+						try {
+							clearAll();
+						} catch (FileNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				
+				// PLAYER > DEALER AND UNDER/AT 21
+				if((playerScore > dealerScore) && (playerScore <= 21))
+				{
+					playerWins++;
+					betWinnings += betAmount;
+					System.out.println("Player won");
+					updateLabels(playerWins, playerLoses, betWinnings);
+					
+					if(playAgainPrompt())
+					{
+						try {
+							
+							clearAll();
+						} catch (FileNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				
+				// DEALERSCORE > PLAYERS AND DEALER UNDER/AT 21
+				if((playerScore < dealerScore) && (dealerScore <= 21))
+				{
+					playerLoses++;
+					betWinnings -= betAmount;
+					updateLabels(playerWins,playerLoses,betWinnings);
+					System.out.println("Dealer won");
+					if(playAgainPrompt())
+					{
+						try {
+							clearAll();
+						} catch (FileNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				
+				// PUSH
+				if(playerScore == dealerScore)
+				{
+					System.out.println();
+					System.out.println("Push");
+					if(playAgainPrompt())
+					{
+						try {
+							clearAll();
+						} catch (FileNotFoundException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				
 			}
 		});
 		
@@ -261,34 +366,19 @@ public class Main extends Application
 		
 		
 		// DEAL BUTTON EVENT HANDLER
-		// When dealing cards, if passed round one, anytime dealer deals itself a card
+		// anytime dealer deals itself a card
 		// put blank card in front of cards
 		
-		// Is it dealer's turn
 		dealButton.getButton().setOnAction(new EventHandler<ActionEvent>() 
 		{
-			
 			public void handle(ActionEvent event)
 			{
-				// Make sure all variables are updated before continuing
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
 				// First two rounds and then make canDeal false until player hits or stands
 				if(!firstTwoRoundsOver)
 				{
 					handleFirstTwoRounds();
 					firstTwoRoundsOver = true;
 					canDeal = false;
-				}
-				
-				if(canDeal && firstTwoRoundsOver)
-				{
-					regularRoundDeal();
 				}
 				
 			}
@@ -300,26 +390,25 @@ public class Main extends Application
 		// HIT 
 		
 		// Allow player to bet before starting
-		if(overallRound == 0 || canBet == true)
+		if(overallRound == 0)
 		{
-			betForLabel = bet();
-			playerBetLabel.setText("Current Bet: " + betForLabel);
-			
+			if(overallRound == 0 || canBet == true)
+			{
+				betForLabel = bet();
+				playerBetLabel.setText("Current Bet: " + betForLabel);
+				
+			}
 		}
+		
 		
 		hitButton.getButton().setOnAction(new EventHandler<ActionEvent>()
 		{
 			public void handle(ActionEvent event)
 			{
-				// Make sure all variables are updated before continuing
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+
 				if(canHit)
 				{
+					System.out.println(cardDeck.getDeckSize());
 					handleHitButton();
 					// ###############################################################################
 					// Check for Winner - WORKING
@@ -367,13 +456,26 @@ public class Main extends Application
 		primaryStage.show();
 	}
 	
+	
+	// ###############################################################################
+	// ###############################################################################
+	// FUNCTIONS
+	// ###############################################################################
+	// ###############################################################################
+	
+	
+	// ###############################################################################
+	// UPDATE LABELS
 	public void updateLabels(int wins, int loses, double betWinnings)
 	{
 		winLabel.setText("Wins: " + wins);
 		loseLabel.setText("Loses: " + loses);
-		playerWinningsLabel.setText("Total Winnings" + currencyConverter(betWinnings));
+		playerWinningsLabel.setText("Total Winnings: " + currencyConverter(betWinnings));
 	}
 	
+	// ###############################################################################
+	// CLEAR PREVIOUS CARDS
+	// Used to prevent the same card being displayed from previous round
 	public void clearAllHands()
 	{
 		// Clear visible cards
@@ -381,31 +483,17 @@ public class Main extends Application
 		dealerHand.getChildren().clear();
 	}
 	
-	public boolean checkGameStatus(boolean gameOver)
-	{
-		System.out.println("checkGameStatus");
-		boolean playerWonOrLost = false;
-		// Did someone win?
-		if(gameOver)
-		{
-			// Was it the player and if so ask to play again
-			if(scoreChecker.getDidPlayerWin() || scoreChecker.getDidPlayerLose())
-			{
-				updateLabels(scoreChecker.getPlayerWins(),scoreChecker.getPlayerLoses(),scoreChecker.getPlayerWinnings());
-				
-				return playerWonOrLost;
-			}
-		} 
-		return playerWonOrLost;
-	}
 	
 	
+	// ###############################################################################
+	// BET FUNCTION
 	public String bet()
 	{
+		// SET UP BET PROMPT, CLEAR LAST TEXT FROM PROMPT
 		prompt.setTitle("Bet");
     	prompt.setHeaderText("Place your bet of $2 to $500");
     	prompt.setContentText("Enter amount:");
-    	
+    	prompt.getEditor().clear();
     	Optional<String> betStr = prompt.showAndWait();
     	
     	// Convert prompt string into dollar amount
@@ -415,6 +503,7 @@ public class Main extends Application
     			String betString = betStr.get();
     			betAmount += betAmount;
     			betAmount = Double.parseDouble(betString);
+    			playerBetLabel.setText(currencyConverter(betAmount));
     		} else {
     			System.out.println("No amount entered");
     			betAmount = 0.0;
@@ -457,30 +546,14 @@ public class Main extends Application
 		{
 			playerScore += card.getCardValue();
 		}
+		
 		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
-		if(gameStatus)
-		{
-			if(scoreChecker.getDidPlayerWin())
-			{
-				betWinnings += betAmount;
-				updateLabels(scoreChecker.getPlayerWins(),scoreChecker.getPlayerLoses(),scoreChecker.getPlayerWinnings());
-				if(scoreChecker.playAgainPrompt())
-				{
-					try {
-						clearAll();
-						String newBet = bet();
-						playerBetLabel.setText("Current Bet: "+newBet);
-					} catch (FileNotFoundException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		}
+
 		cardDeck.clearGameCards();
 		
 		cardPlayerHand.clear();
 		cardDealerList.clear();
+		
 		// At end of hit, make dealing possible and hitting not possible
 		canHit = false;
 		canDeal = true;
@@ -490,14 +563,16 @@ public class Main extends Application
 	// METHOD TO HANDLE FIRST FEW ROUNDS
 	public void handleFirstTwoRounds()
 	{
-	
+		
 		cardDeck.clearGameCards();
 		cardPlayerHand.clear();
 		cardDealerList.clear();
+		
 		if(canDeal)
 		{
 			while(loop)
 			{
+				
 				if((overallRound > 2 && playerCardCount == 1) && (overallRound > 2 && dealerCardCount == 1)) 
 				{
 					canHit = true;
@@ -515,35 +590,62 @@ public class Main extends Application
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				
 				// Remove cards used
 				cardDeck.removeCard(1);
 
-				for (Cards card : cardPlayerHand) {
+				for (Cards card : cardPlayerHand)
+				{
 				    playerHand.getChildren().add(card.displayCardView());
 
-				    if (card.getCardValue() != null) {
+				    
+				    if (card.getCardValue() != null) 
+				    {
+				    	// Get the first two cards to test for Natural Black Jack
 				        playerScore += card.getCardValue();
 				    }
-
-				    gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
-				    if (gameStatus) {
-				        if (scoreChecker.getDidPlayerWin()) {
-				            betWinnings += betAmount;
-				            updateLabels(scoreChecker.getPlayerWins(), scoreChecker.getPlayerLoses(), scoreChecker.getPlayerWinnings());
-				            if (scoreChecker.playAgainPrompt()) {
-				                try {
-				                    clearAll();
-				                    String newBet = bet();
-				                    playerBetLabel.setText("Current Bet: "+newBet);
-				                } catch (FileNotFoundException e) {
-				                    e.printStackTrace();
-				                }
-				            }
-				            clearAllHands();
-				        }
-				    }
+				
+				
 				}
+				
+				
+				// ###############################################################################
+			    // NATURAL BLACKJACK TEST
+				
+				
+				if(overallRound == 0)
+				{
+					cardOne = cardPlayerHand.get(0).getCardValue();
+				}
+				
+				if(overallRound == 1)
+				{
+					cardTwo = cardPlayerHand.get(0).getCardValue();
+					if(isNaturalBlackJack(cardOne, cardTwo, playerWins, betAmount, betWinnings))
+					{
+						if(playAgainPrompt())
+						{
+							try {
+								updateLabels(playerWins, playerLoses, betWinnings);
+								clearAll();
+							} catch (FileNotFoundException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+					System.out.println("cardOne: "+cardOne);
+					System.out.println("cardTwo: "+cardTwo);
+				}
+					
+				// ###############################################################################
+				
+				
+				// ###############################################################################
+				// CHECK FOR WINNER
+				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+				
+				winCheck(gameStatus);
+				System.out.println(firstRound);
 				
 				System.out.println("Player score: "+playerScore);
 				System.out.println("Dealer score: "+dealerScore);
@@ -572,7 +674,6 @@ public class Main extends Application
 						{
 							dealerHand.getChildren().remove(blankView);
 						}
-						
 						dealerHand.getChildren().add(blankView);
 						isBlankCardAdded = true;
 						break;
@@ -588,9 +689,13 @@ public class Main extends Application
 					
 					dealerCardCount++;
 					
-					gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
 				}
-			
+				
+				// ###############################################################################
+				// CHECK FOR WINNER
+				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+				winCheck(gameStatus);
+				
 				cardDeck.clearGameCards();
 				
 				// Cards for dealer face down after 1st round
@@ -620,6 +725,8 @@ public class Main extends Application
 		}
 	}
 	
+	// ###############################################################################
+	// REGULAR ROUND, EACH PLAYER GETS CARD FACE UP
 	public void regularRoundDeal()
 	{
 		try {
@@ -634,28 +741,15 @@ public class Main extends Application
 		cardDeck.removeCard(1);
 		
 		// Card is drawn and displayed
-		
 		playerHand.getChildren().add(card.displayCardView());
 		playerScore += card.getCardValue();
 		
 		
 		
 		// ###############################################################################
-		// Check for Winner - WORKING
+		// CHECK FOR WINNER
 		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
-		if(gameStatus)
-		{
-			updateLabels(scoreChecker.getPlayerWins(),scoreChecker.getPlayerLoses(),scoreChecker.getPlayerWinnings());
-			if(playAgainPrompt())
-			{
-				try {
-					clearAll();
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
+		winCheck(gameStatus);
 		
 		cardDeck.clearGameCards();
 		
@@ -684,28 +778,19 @@ public class Main extends Application
 		
 		System.out.println("Player score: "+playerScore);
 		System.out.println("Dealer score: "+dealerScore);
-		// ###############################################################################
-		// Check for Winner - WORKING
-		if(gameStatus)
-		{
-			updateLabels(scoreChecker.getPlayerWins(),scoreChecker.getPlayerLoses(),scoreChecker.getPlayerWinnings());
-			if(playAgainPrompt())
-			{
-				try {
-					clearAll();
-					String newBet = bet();
-					playerBetLabel.setText("Current Bet: "+newBet);
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
+		
+		
+		// Check for winner
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+		winCheck(gameStatus);
+						
 	
 		cardDeck.clearGameCards();
 		canHit = true;
 	}
 	
+	// ###############################################################################
+	// DEALER DRAW ONE CARD
 	public void singleDealerTurn()
 	{
 		try {
@@ -735,30 +820,19 @@ public class Main extends Application
 		
 		dealerCardCount++;
 		
+		// Check for winner
 		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
-		
-		// ###############################################################################
-		// Check for Winner - WORKING
-		if(gameStatus)
-		{
-			updateLabels(scoreChecker.getPlayerWins(),scoreChecker.getPlayerLoses(),scoreChecker.getPlayerWinnings());
-			if(playAgainPrompt())
-			{
-				try {
-					clearAll();
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		}
+		winCheck(gameStatus);
+				
 		System.out.println("Player score: "+playerScore);
 		System.out.println("Dealer score: "+dealerScore);
 		cardDeck.clearGameCards();
 		canHit = true;
 	}
 	
-	public DeckCards clearAll() throws FileNotFoundException
+	// ###############################################################################
+	// CLEAR ALL VARIABLE FOR NEW GAME
+	public void clearAll() throws FileNotFoundException
 	{
 		firstTwoRoundsOver = false;
 		canDeal = true;
@@ -781,6 +855,9 @@ public class Main extends Application
 		cardDeck = null;
 		cardDeck = new DeckCards();
 		cardDeck.shuffleDeck();
+		String newBet = bet();
+		playerBetLabel.setText("Current Bet: "+newBet);
+		dealButton.getButton().fire();
 		
 		try {
 			Thread.sleep(1000);
@@ -788,7 +865,6 @@ public class Main extends Application
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return cardDeck;
 	}
 	
 	// ###############################################################################
@@ -811,59 +887,7 @@ public class Main extends Application
     	return false;
 	}
 	
-	// ###############################################################################
-	// STAND DEALER LAST TURN 
-	public void standDealerLastTurn()
-	{
-		System.out.println("standDealerLastTurn");
-		playerStood = true;
-		// LAST TURN FOR DEALER, FIND OUT WHO WON
-		try {
-			card = cardDeck.getCards(1).get(0);
-			cardDealerList.add(card);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		// Remove cards from deck that are used
-		cardDeck.removeCard(1);
-		
-		// DISPLAY BLANK CARD AT END OF HAND OF DEALER
-		dealerHand.getChildren().remove(blankView);
-		dealerHand.getChildren().add(card.displayCardView());
-		
-		// Handle NullPointException that show up 
-		if (dealerHand != null) {
-		    dealerHand.getChildren().add(blankView);
-		} else {
-			System.out.println("Something else is wrong");
-		}
-		
-		// Handle NullPointException that show up
-		if(card.getCardValue() != null)
-		{
-			dealerScore += card.getCardValue();
-		}
-		
-		dealerCardCount++;
-		
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
-		updateLabels(scoreChecker.getPlayerWins(),scoreChecker.getPlayerLoses(),scoreChecker.getPlayerWinnings());
-		
-		// Execute play againt prompt
-		if(playAgainPrompt())
-		{
-			try {
-				clearAll();
-				String newBet = bet();
-				playerBetLabel.setText("Current Bet: "+newBet);;
-			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
+	
 	
 	// ###############################################################################
 	// CURRENCY CONVERTER
@@ -877,7 +901,44 @@ public class Main extends Application
 		
 		return formattedAmount;
 	}
+	
+	// ###############################################################################
+	// WIN CHECKER
+	public void winCheck(boolean gameStatus)
+	{
+		if(gameStatus)
+		{
+			updateLabels(scoreChecker.getPlayerWins(),scoreChecker.getPlayerLoses(),scoreChecker.getPlayerWinnings());
+			if(playAgainPrompt())
+			{
+				try {
+					updateLabels(scoreChecker.getPlayerWins(),scoreChecker.getPlayerLoses(),scoreChecker.getPlayerWinnings());
+					clearAll();
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 
+	// ###############################################################################
+	// NATURAL BLACK JACK CONDITION
+	// Test for Natural BlackJack, one card is face or ten card and other is ace, vice versa
+	public boolean isNaturalBlackJack(Integer cardOne, Integer cardTwo, Integer playerWins, Double betAmount, Double betWinnings)
+	{
+		if((cardOne == 10 && cardTwo == 11) || (cardTwo == 10 && cardOne == 11))
+		{
+			System.out.println("Natural Black Jack!");
+			playerWins++;
+			betWinnings += (betAmount + (betAmount / 2));
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
 	public static void main(String[] args)
 	{
 		launch(args);
