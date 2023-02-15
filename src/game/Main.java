@@ -1,5 +1,7 @@
 package game;
 
+import java.awt.geom.RoundRectangle2D;
+
 // Name: Roman Campbell
 // Project: Black_Jack
 // A basic game of blackjack, 21 makes a winner, anything above is a bust
@@ -11,25 +13,43 @@ import java.util.Currency;
 import java.util.Locale;
 import java.util.Optional;
 
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class Main extends Application 
 {
 	private static ArrayList<Cards> cardPlayerHand;
-	private static ArrayList<Cards> cardDealerList;
+	private static ArrayList<Cards> cardDealerHand;
 	private static GameButton dealButton;
 	private static Cards card;
 	private static Integer cardOne;
@@ -39,6 +59,8 @@ public class Main extends Application
 	private static HBox dealerHand;
 	private static Label playerWinningsLabel;
 	private static Label playerBetLabel;
+	private static Pane winContainer;
+	private static Pane loseContainer;
 	private TextInputDialog prompt;
 	private ImageView blankView;
 	private static Cards blankCard;
@@ -72,7 +94,7 @@ public class Main extends Application
 		// Instantiate card deck
 		cardDeck 						= new DeckCards();
 		card							= new Cards();
-		cardDealerList 					= new ArrayList<Cards>();
+		cardDealerHand 					= new ArrayList<Cards>();
 		cardPlayerHand 					= new ArrayList<Cards>();
 		blankCard 						= new Cards();
 		blankView 						= blankCard.displayBlankCardView();
@@ -149,20 +171,55 @@ public class Main extends Application
 		
 		// ###############################################################################
 		// TOP CENTER HBOX
-		winLabel = new Label("Wins: " + playerWins);
-		loseLabel = new Label("Loses: " + playerLoses);
+		winLabel 	= new Label("Wins: " + playerWins);
+		loseLabel 	= new Label("Loses: " + playerLoses);
 		
 		winLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 		loseLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+		
+		// Red background to loser and Light green background to winner
+		winContainer 	= new StackPane();
+		loseContainer 	= new StackPane();
+		
+		// Set background with fill
+		winContainer.setBackground(new Background(new BackgroundFill(Color.LIGHTGREEN,null,null)));
+		loseContainer.setBackground(new Background(new BackgroundFill(Color.LIGHTCORAL,null,null)));
+		
+		// Create appropriate size
+		winContainer.setPrefSize(200, 50);
+		loseContainer.setPrefSize(200, 50);
+		
+		// Add labels to containers
+		winContainer.getChildren().add(winLabel);
+		loseContainer.getChildren().add(loseLabel);
+		
+		// Round corners
+		winContainer.setStyle("-fx-background-radius: 20; "
+							+ "-fx-background-color: lightgreen;");
+		
+		loseContainer.setStyle("-fx-background-radius: 20;"
+							+ "-fx-background-color: lightcoral;");
+		
+		// Center the labels
+		StackPane.setAlignment(winLabel, Pos.CENTER);
+		StackPane.setAlignment(loseLabel, Pos.CENTER);
+		
+		// Setup backgrounds for flash animation on wins and loses
+		BackgroundFill winFill = new BackgroundFill(Color.LIGHTGREEN, null, null);
+		BackgroundFill loseFill = new BackgroundFill(Color.LIGHTCORAL, null, null);
+		
+		
+				
 
-		HBox middleRightHBox = new HBox();
-		middleRightHBox.setPadding(new Insets(10,10,10,10));
-		middleRightHBox.setSpacing(20);
+		VBox middleRightVBox = new VBox();
+		middleRightVBox.setPadding(new Insets(10,10,10,10));
+		middleRightVBox.setSpacing(20);
 		
-		middleRightHBox.getChildren().addAll(winLabel,loseLabel);
+		middleRightVBox.getChildren().addAll(winContainer,loseContainer);
 		
-		root.setRight(middleRightHBox);
-		BorderPane.setAlignment(middleRightHBox, javafx.geometry.Pos.TOP_CENTER);
+		root.setRight(middleRightVBox);
+		BorderPane.setAlignment(middleRightVBox, javafx.geometry.Pos.TOP_CENTER);
+		
 		// ###############################################################################
 		// TOP LEFT VBOX
 		VBox topLeftVBox = new VBox();
@@ -218,12 +275,12 @@ public class Main extends Application
 				// method not used here as program was crashing after 2 rounds
 				cardDeck.clearGameCards();
 				cardPlayerHand.clear();
-				cardDealerList.clear();
+				cardDealerHand.clear();
 				
 				try {
 					
 					card = cardDeck.getCards(1).get(0);
-					cardDealerList.add(card);
+					cardDealerHand.add(card);
 				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -547,12 +604,12 @@ public class Main extends Application
 			playerScore += card.getCardValue();
 		}
 		
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
 
 		cardDeck.clearGameCards();
 		
 		cardPlayerHand.clear();
-		cardDealerList.clear();
+		cardDealerHand.clear();
 		
 		// At end of hit, make dealing possible and hitting not possible
 		canHit = false;
@@ -566,7 +623,7 @@ public class Main extends Application
 		
 		cardDeck.clearGameCards();
 		cardPlayerHand.clear();
-		cardDealerList.clear();
+		cardDealerHand.clear();
 		
 		if(canDeal)
 		{
@@ -642,7 +699,7 @@ public class Main extends Application
 				
 				// ###############################################################################
 				// CHECK FOR WINNER
-				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
 				
 				winCheck(gameStatus);
 				System.out.println(firstRound);
@@ -652,12 +709,12 @@ public class Main extends Application
 				cardDeck.clearGameCards();
 				
 				cardPlayerHand.clear();
-				cardDealerList.clear();
+				cardDealerHand.clear();
 				
 				// ###############################################################################
 				// DEALER CARDS SECTION
 				try {
-					cardDealerList.addAll(cardDeck.getCards(1));
+					cardDealerHand.addAll(cardDeck.getCards(1));
 				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -666,7 +723,7 @@ public class Main extends Application
 				// Remove cards from deck that are used
 				cardDeck.removeCard(1);
 				
-				for(Cards card : cardDealerList)
+				for(Cards card : cardDealerHand)
 				{
 					if(overallRound == 1)
 					{
@@ -693,7 +750,7 @@ public class Main extends Application
 				
 				// ###############################################################################
 				// CHECK FOR WINNER
-				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
 				winCheck(gameStatus);
 				
 				cardDeck.clearGameCards();
@@ -748,19 +805,19 @@ public class Main extends Application
 		
 		// ###############################################################################
 		// CHECK FOR WINNER
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
 		winCheck(gameStatus);
 		
 		cardDeck.clearGameCards();
 		
 		cardPlayerHand.clear();
-		cardDealerList.clear();
+		cardDealerHand.clear();
 		
 		// ###############################################################################
 		// DEALER CARDS SECTION
 		try {
 			card = cardDeck.getCards(1).get(0);
-			cardDealerList.add(card);
+			cardDealerHand.add(card);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -781,7 +838,7 @@ public class Main extends Application
 		
 		
 		// Check for winner
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
 		winCheck(gameStatus);
 						
 	
@@ -795,7 +852,7 @@ public class Main extends Application
 	{
 		try {
 			card = cardDeck.getCards(1).get(0);
-			cardDealerList.add(card);
+			cardDealerHand.add(card);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -821,7 +878,7 @@ public class Main extends Application
 		dealerCardCount++;
 		
 		// Check for winner
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerList, cardDeck, dealerHand, playerStood, betAmount);
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
 		winCheck(gameStatus);
 				
 		System.out.println("Player score: "+playerScore);
@@ -839,14 +896,14 @@ public class Main extends Application
 		canHit = false;
 		loop = true;
 		firstRound = 0;
-		cardDealerList = null;
+		cardDealerHand = null;
 		cardPlayerHand = null;
-		cardDealerList = new ArrayList<Cards>();
+		cardDealerHand = new ArrayList<Cards>();
 		cardPlayerHand = new ArrayList<Cards>();
 		dealerHand.getChildren().clear();
 		playerHand.getChildren().clear();
 		cardPlayerHand.clear();
-		cardDealerList.clear();
+		cardDealerHand.clear();
 		dealerScore = 0;
 		playerScore = 0;
 		overallRound = 0;
@@ -938,7 +995,7 @@ public class Main extends Application
 		
 		return false;
 	}
-	
+
 	public static void main(String[] args)
 	{
 		launch(args);
