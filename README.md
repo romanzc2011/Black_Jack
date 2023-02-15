@@ -6,7 +6,10 @@ Basic game of Black Jack with UI. Game works well, but after extended use, there
 - To start game press the "Deal" button and answer prompt about bet amount.
 - Just use "Hit" or "Stand" during gameplay as dealer is programmed to execute its turn as soon as player executes their turn.
 - Upon winning or losing player will be prompted if they want to play again, type 'N' for No and 'Y' for yes, without ' surronding them of course.
+
 - The glitch that appears, has to do with how the Stand button is implemented.
+- My initial plan was to use mostly OOP concepts, but as time dwindled, I started using more procedural programming.
+- Overall great learning experience and fun little project.
 
 Implementations outside of primary scope:
 - I decided to use JavaFX to create a UI, it was quite challenging as some things in the game were new learning experience. Having said that may not have     been the best time as I believe gameplay may have been affected if the rogue glitch happens.
