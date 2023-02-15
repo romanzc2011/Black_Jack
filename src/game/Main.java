@@ -13,11 +13,6 @@ import java.util.Currency;
 import java.util.Locale;
 import java.util.Optional;
 
-import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -29,22 +24,15 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 
 public class Main extends Application 
 {
@@ -70,8 +58,8 @@ public class Main extends Application
 	private Integer playerWins 	= 0;
 	private Integer playerLoses = 0;
 	private NumberFormat currencyFormat;
-	private Double betAmount = 0.0;
-	private Double betWinnings = 0.0;
+	private static Double betAmount = 0.0;
+	private static Double betWinnings = 0.0;
 	private String betFormatted;
 	private String betForLabel;
 	private Integer dealerCardCount = 0;
@@ -203,13 +191,6 @@ public class Main extends Application
 		// Center the labels
 		StackPane.setAlignment(winLabel, Pos.CENTER);
 		StackPane.setAlignment(loseLabel, Pos.CENTER);
-		
-		// Setup backgrounds for flash animation on wins and loses
-		BackgroundFill winFill = new BackgroundFill(Color.LIGHTGREEN, null, null);
-		BackgroundFill loseFill = new BackgroundFill(Color.LIGHTCORAL, null, null);
-		
-		
-				
 
 		VBox middleRightVBox = new VBox();
 		middleRightVBox.setPadding(new Insets(10,10,10,10));
@@ -234,8 +215,8 @@ public class Main extends Application
 		// BOTTOM LEFT VBOX
 		VBox bottomLeftVBox = new VBox();
 		bottomLeftVBox.getChildren().add(playerBetLabel);
-		bottomLeftVBox.getChildren().add(playerHandLabel);
 		bottomLeftVBox.getChildren().add(playerWinningsLabel);
+		bottomLeftVBox.getChildren().add(playerHandLabel);
 		bottomLeftVBox.getChildren().add(playerHand);
 		bottomLeftVBox.getChildren().add(bottomLButtons);
 		
@@ -527,7 +508,7 @@ public class Main extends Application
 	{
 		winLabel.setText("Wins: " + wins);
 		loseLabel.setText("Loses: " + loses);
-		playerWinningsLabel.setText("Total Winnings: " + currencyConverter(betWinnings));
+		playerWinningsLabel.setText("Total Winnings: " + currencyConverter(scoreChecker.getPlayerWinnings()));
 	}
 	
 	// ###############################################################################
@@ -604,7 +585,7 @@ public class Main extends Application
 			playerScore += card.getCardValue();
 		}
 		
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount, betWinnings);
 
 		cardDeck.clearGameCards();
 		
@@ -677,7 +658,7 @@ public class Main extends Application
 				if(overallRound == 1)
 				{
 					cardTwo = cardPlayerHand.get(0).getCardValue();
-					if(isNaturalBlackJack(cardOne, cardTwo, playerWins, betAmount, betWinnings))
+					if(isNaturalBlackJack(cardOne, cardTwo, playerWins, betAmount, betWinnings) > 0.0)
 					{
 						if(playAgainPrompt())
 						{
@@ -699,7 +680,7 @@ public class Main extends Application
 				
 				// ###############################################################################
 				// CHECK FOR WINNER
-				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
+				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount, betWinnings);
 				
 				winCheck(gameStatus);
 				System.out.println(firstRound);
@@ -750,7 +731,7 @@ public class Main extends Application
 				
 				// ###############################################################################
 				// CHECK FOR WINNER
-				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
+				gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount, betWinnings);
 				winCheck(gameStatus);
 				
 				cardDeck.clearGameCards();
@@ -805,7 +786,7 @@ public class Main extends Application
 		
 		// ###############################################################################
 		// CHECK FOR WINNER
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount, betWinnings);
 		winCheck(gameStatus);
 		
 		cardDeck.clearGameCards();
@@ -838,7 +819,7 @@ public class Main extends Application
 		
 		
 		// Check for winner
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount, betWinnings);
 		winCheck(gameStatus);
 						
 	
@@ -878,7 +859,7 @@ public class Main extends Application
 		dealerCardCount++;
 		
 		// Check for winner
-		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount);
+		gameStatus = scoreChecker.checkScore(card, dealerScore, playerScore, cardDealerHand, cardDeck, dealerHand, playerStood, betAmount, betWinnings);
 		winCheck(gameStatus);
 				
 		System.out.println("Player score: "+playerScore);
@@ -982,7 +963,7 @@ public class Main extends Application
 	// ###############################################################################
 	// NATURAL BLACK JACK CONDITION
 	// Test for Natural BlackJack, one card is face or ten card and other is ace, vice versa
-	public boolean isNaturalBlackJack(Integer cardOne, Integer cardTwo, Integer playerWins, Double betAmount, Double betWinnings)
+	public Double isNaturalBlackJack(Integer cardOne, Integer cardTwo, Integer playerWins, Double betAmount, Double betWinnings)
 	{
 		if((cardOne == 10 && cardTwo == 11) || (cardTwo == 10 && cardOne == 11))
 		{
@@ -990,10 +971,10 @@ public class Main extends Application
 			playerWins++;
 			betWinnings += (betAmount + (betAmount / 2));
 			
-			return true;
+			return betWinnings;
 		}
 		
-		return false;
+		return 0.0;
 	}
 
 	public static void main(String[] args)

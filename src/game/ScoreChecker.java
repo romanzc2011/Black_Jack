@@ -12,21 +12,20 @@ public class ScoreChecker
 	private boolean playerLost = false;
 	private boolean dealerWon = false;
 	private boolean playAgain = false;
-	private boolean push = false;
 	private Integer playerWins = 0;
 	private Double betWinnings = 0.0;
+	private Double betAmount = 0.0;
 	private Integer playerLoses = 0;
 	private Integer dealerWins = 0;
 	private Integer dealerLoses = 0;
 	private TextInputDialog prompt;
-	private Optional<String> response;
 	
 	public ScoreChecker()
 	{
 		
 	}
 	
-    public boolean checkScore(Cards card, int dealerScore, int playerScore, List<Cards> cardDealerList, DeckCards cardDeck, HBox dealerHand, boolean playerStood, double betAmount) 
+    public boolean checkScore(Cards card, int dealerScore, int playerScore, List<Cards> cardDealerList, DeckCards cardDeck, HBox dealerHand, boolean playerStood, double betAmount, double betWinnings) 
     {
         if(dealerScore > 21 && playerScore <= 21) 
         {
@@ -34,10 +33,12 @@ public class ScoreChecker
             card.setDealerLost();
             card.setPlayerWon();
             
+            
             this.setAddPlayerWins();
             this.setAddDealerLoses();
             
-            betWinnings += betAmount;
+            this.setBetPlayerWinnings(betWinnings, betAmount);
+            
             return this.setPlayerWon();
         }
         
@@ -48,14 +49,14 @@ public class ScoreChecker
         	{
         		System.out.println("Player won");
         		playerWon = true;
-        		betWinnings += betAmount;
+        		this.setBetPlayerWinnings(betWinnings, betAmount);
         		return playerWon;
         		
         	} else {
         		System.out.println("Dealer won");
         		playerLoses++;
         		dealerWon = true;
-        		betWinnings -= betAmount;
+        		this.setBetPlayerLoses(betWinnings, betAmount);
         		return dealerWon;
         	}
         }
@@ -67,7 +68,7 @@ public class ScoreChecker
             this.setAddDealerLoses();
             
             System.out.println("Player won");
-            betWinnings += betAmount;
+            this.setBetPlayerWinnings(betWinnings, betAmount);
             return this.setPlayerWon();
         }
         
@@ -79,7 +80,7 @@ public class ScoreChecker
             this.setAddPlayerLoses();
             this.setAddDealerWins();
             
-            betWinnings -= betAmount;
+            this.setBetPlayerLoses(betWinnings, betAmount);
             return this.setPlayerLost();
         }
         
@@ -104,6 +105,12 @@ public class ScoreChecker
     	
 	}
     
+    // #################################################################################
+    // #################################################################################
+    // SETTERS
+    // #################################################################################
+    // #################################################################################
+    
     public boolean setPlayerLost()
     {
     	this.playerWon = false;
@@ -111,26 +118,9 @@ public class ScoreChecker
     	return this.dealerWon = true;
     }
     
-    public boolean getDidPlayerLose()
+    public void setAddDealerWins()
     {
-    	return this.playerLost;
-    }
-    
-    public boolean setPlayerWon()
-    {
-    	this.dealerWon = false;
-    	return playerWon = true;
-    }
-    
-    public boolean getDidPlayerWin()
-    {
-    	return this.playerWon;
-    }
-    
-    
-    public boolean getDealerWon()
-    {
-    	return this.dealerWon;
+    	this.dealerWins++;
     }
     
     public void setAddPlayerWins()
@@ -138,9 +128,10 @@ public class ScoreChecker
     	this.playerWins++;
     }
     
-    public void setAddDealerWins()
+    public boolean setPlayerWon()
     {
-    	this.dealerWins++;
+    	this.dealerWon = false;
+    	return playerWon = true;
     }
     
     public void setAddPlayerLoses()
@@ -151,6 +142,39 @@ public class ScoreChecker
     public void setAddDealerLoses()
     {
     	this.dealerLoses++;
+    }
+    
+    public void setBetPlayerWinnings(double betWinnings, double betAmount)
+    {
+    	this.betWinnings += betAmount;
+    }
+    
+    public void setBetPlayerLoses(double betWinnings, double betAmount)
+    {
+    	this.betWinnings -= betAmount;
+    }
+    
+    
+    // #################################################################################
+    // #################################################################################
+    // GETTERS
+    // #################################################################################
+    // #################################################################################
+    
+    
+    public boolean getDidPlayerWin()
+    {
+    	return this.playerWon;
+    }
+    
+    public boolean getDealerWon()
+    {
+    	return this.dealerWon;
+    }
+    
+    public boolean getDidPlayerLose()
+    {
+    	return this.playerLost;
     }
     
     public Integer getPlayerWins()
